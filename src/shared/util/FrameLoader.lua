@@ -16,3 +16,4 @@ function mainModule:ClearAllFrames(holder: GuiObject, storage: Folder, tween: bo
 
     return true
 end
+
