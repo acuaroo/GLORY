@@ -16,7 +16,7 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
         end
     end
 
-    if foundClass == nil then return warn("WRN: No class found by the name %s", class) end
+    if foundClass == nil then return warn("WRN: No class found by the name "..class) end
 
     local foundClassModule = require(foundClass)
     local animationData = foundClassModule.ClassData.Animations
@@ -29,8 +29,9 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     newCharacter:SetPrimaryPartCFrame(player.Character.PrimaryPart.CFrame)
 
     player.Character = newCharacter
+
     player.Character:WaitForChild("Animate").Disabled = true
-    task.delay()
+    task.wait(0.1)
     player.Character:WaitForChild("Animate").Disabled = false
 
     ReplicatedStorage:WaitForChild("Remotes").ChangeCamera:FireClient(player);

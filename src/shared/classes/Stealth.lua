@@ -4,8 +4,8 @@ local class = {}
 --|| MAIN ||--
 class.ClassData = {
     Health = 100,
-    Speed = 16,
-    Jump = 50,
+    Speed = 40,
+    Jump = 70,
 
     Attack1 = {
         Damage = 50,

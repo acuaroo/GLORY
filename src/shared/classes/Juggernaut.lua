@@ -3,16 +3,14 @@ local class = {}
 
 --|| MAIN ||--
 class.ClassData = {
-    Health = 100,
-    Speed = 16,
-    Jump = 50,
+    Health = 75,
+    Speed = 14,
+    Jump = 30,
 
     Attack1 = {
         Damage = 50,
         Stun = 0,
-        Knockback = 0,
-        CastLocation = "Left Arm",
-        CastLocation2 = "Right Arm"
+        Knockback = 0
     },
     Attack2 = {
         Damage = 50,
