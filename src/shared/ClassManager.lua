@@ -22,13 +22,17 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     local animationData = foundClassModule.ClassData.Animations
 
     local newCharacter = ServerStorage:WaitForChild("ClassModels")[foundClassModule.ClassData.Character]:Clone()
-
     newCharacter.Name = player.Name
     newCharacter.Parent = workspace
     newCharacter:MakeJoints()
     newCharacter:SetPrimaryPartCFrame(player.Character.PrimaryPart.CFrame)
 
     player.Character = newCharacter
+
+    local classValue = Instance.new("StringValue")
+    classValue.Name = "ClassValue"
+    classValue.Parent = player.Character
+    classValue.Value = class
 
     player.Character:WaitForChild("Animate").Disabled = true
     task.wait(0.1)
@@ -44,5 +48,11 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     humanoid.JumpPower = foundClassModule.ClassData.Jump
 end
 
+function classModule:RemoveClassOnCharacter(player: Player) do
+    if not player.Character:FindFirstChild("ClassValue") then return warn("WRN: No class is loaded onto the given player") end
+    player.Character.ClassValue:Destroy()
+    player:LoadCharacter()
+    return print("Given player's class has been removed")
+end
 --|| EXPORTING ||--
 return classModule
