@@ -46,6 +46,8 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     humanoid.MaxHealth = foundClassModule.ClassData.Health
     humanoid.Health = foundClassModule.ClassData.Health
     humanoid.JumpPower = foundClassModule.ClassData.Jump
+
+    return animationData, humanoid
 end
 
 function classModule:RemoveClassOnCharacter(player: Player) do
@@ -54,5 +56,6 @@ function classModule:RemoveClassOnCharacter(player: Player) do
     player:LoadCharacter()
     return print("Given player's class has been removed")
 end
+
 --|| EXPORTING ||--
 return classModule
