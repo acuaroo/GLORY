@@ -1,0 +1,526 @@
+<roblox version="4">
+  <Item class="ReplicatedStorage" referent="0">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="1">
+      <Properties>
+        <string name="Name">Modules</string>
+      </Properties>
+      <Item class="ModuleScript" referent="2">
+        <Properties>
+          <string name="Name">ClassManager</string>
+          <string name="Source">--|| SERVICES ||--
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--|| VARS ||--
+local classModule = {}
+local removeAttack = ReplicatedStorage:WaitForChild("Remotes").RemoveAttack
+
+--|| FUNCTIONS ||--
+function classModule:LoadClassOnCharacter(player: Player, class: string) 
+    local foundClass = nil
+
+    for _, selectedClass in pairs(script.Parent.classes:GetChildren()) do
+        if selectedClass.Name == class then 
+            foundClass = selectedClass
+            break
+        end
+    end
+
+    if foundClass == nil then return warn("WRN: No class found by the name "..class) end
+
+    local foundClassModule = require(foundClass)
+    local animationData = foundClassModule.ClassData.Animations
+
+    local newCharacter = ServerStorage:WaitForChild("ClassModels")[foundClassModule.ClassData.Character]:Clone()
+    newCharacter.Name = player.Name
+    newCharacter.Parent = workspace
+    newCharacter:MakeJoints()
+    newCharacter:SetPrimaryPartCFrame(player.Character.PrimaryPart.CFrame)
+
+    player.Character = newCharacter
+
+    local classValue = Instance.new("StringValue")
+    classValue.Name = "ClassValue"
+    classValue.Parent = player.Character
+    classValue.Value = class
+
+    player.Character:WaitForChild("Animate").Disabled = true
+    task.wait(0.1)
+    player.Character:WaitForChild("Animate").Disabled = false
+
+    ReplicatedStorage:WaitForChild("Remotes").ChangeCamera:FireClient(player);
+
+    local humanoid = player.Character:WaitForChild("Humanoid")
+
+    humanoid.WalkSpeed = foundClassModule.ClassData.Speed
+    humanoid.MaxHealth = foundClassModule.ClassData.Health
+    humanoid.Health = foundClassModule.ClassData.Health
+    humanoid.JumpPower = foundClassModule.ClassData.Jump
+
+    return print("Given player's class has been added"), animationData, humanoid, foundClassModule.ClassData.Attack1, foundClassModule.ClassData.Attack2, foundClassModule.ClassData.Attack3
+end
+
+function classModule:RemoveClassOnCharacter(player: Player)
+    if not player.Character:FindFirstChild("ClassValue") then return warn("WRN: No class is loaded onto the given player") end
+    player.Character.ClassValue:Destroy()
+    player:LoadCharacter()
+    removeAttack:FireClient(player)
+    return print("Given player's class has been removed")
+end
+
+--|| EXPORTING ||--
+return classModule</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">Debounce</string>
+          <string name="Source"><![CDATA[--//Hopefully you find this module in some way usefull 
+
+--//Created by AllAllLol1\\
+--//Version 2.5\\
+
+local Cooldown = {}
+local CooldownData = {}
+
+function Cooldown.Add(tableName, valueName, cooldown, callback, args) -- This function will insert a table for each diffirent player with diffirent cooldown values for diffirent valueName
+	if tonumber(cooldown) ~= nil then
+		if CooldownData[tableName] then
+			table.insert(CooldownData[tableName], valueName)
+			CooldownData[tableName][valueName] = {["StartTime"] = os.clock(), ["Time"] = cooldown, ["TimeLeft"] = cooldown, ["Function"] = callback, ["Arguments"] = args}
+			return true
+		else
+			CooldownData[tableName] = {[valueName] = {["StartTime"] = os.clock(), ["Time"] = cooldown, ["TimeLeft"] = cooldown, ["Function"] = callback, ["Arguments"] = args}}
+			return true
+		end
+	end
+	return false
+end
+
+function Cooldown.Check(tableName, valueName) --This function will check [CooldownList] table in order to know if the value already exists, if it does returns false
+	if CooldownData[tableName] then
+		if CooldownData[tableName][valueName] then
+			local timeLeft = CooldownData[tableName][valueName]["TimeLeft"]
+			return false, timeLeft --If you want to round timeLeft into just seconds without miliseconds do math.floor(timeLeft)
+		else
+			return true
+		end
+	else
+		return true
+	end
+end
+
+local NewUpdateThread = coroutine.wrap(function() --Countdown timer for all of the cooldowns, a NewUpdateThread will NOT be created everytime you require() the module. Unless it's required from both sides client and server, then 2 threads will be running.
+	local RunService = game:GetService("RunService")
+	
+	while RunService.Heartbeat:Wait() do
+		for TableOrder,Table in next, CooldownData do
+			for TableName,TableValues in pairs(Table) do
+				if TableValues["StartTime"] and TableValues["Time"] and TableValues["TimeLeft"] then
+					local currentTime = os.clock()
+					local timePassed = currentTime - TableValues["StartTime"]
+					local timeLeft = TableValues["Time"] - timePassed
+					if TableValues["Time"] >= timePassed then
+						TableValues["TimeLeft"] = timeLeft
+					else
+						TableValues["TimeLeft"] = 0
+						
+						local callback = coroutine.wrap(function() --New thread is created, so it won't slow down the for loop
+							if TableValues["Function"] then
+								if TableValues["Arguments"] then
+									TableValues["Function"](TableValues["Arguments"]) --Run the callback function with argument(s)
+								else 
+									TableValues["Function"]() --Run the callback function
+								end
+							end
+						end)
+						
+						pcall(function()
+							callback()
+						end)
+						
+						CooldownData[TableOrder][TableName] = nil --Remove the cooldown from table
+						
+						if #CooldownData[TableOrder] == 0 then --Remove the table from CooldownList if its empty (	just to keep the table clean :]  )
+							CooldownData[TableOrder] = nil
+						end
+					end
+				end
+			end
+		end
+	end
+end)
+
+NewUpdateThread()
+
+return Cooldown
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="4">
+        <Properties>
+          <string name="Name">classes</string>
+        </Properties>
+        <Item class="ModuleScript" referent="5">
+          <Properties>
+            <string name="Name">Brute</string>
+            <string name="Source">--|| VARS ||--
+local class = {}
+
+--|| MAIN ||--
+class.ClassData = {
+    Health = 100,
+    Speed = 16,
+    Jump = 50,
+
+    Attack1 = {
+        Damage = 40,
+        Stun = 0,
+        Knockback = 1,
+        Cooldown = 2
+    },
+    Attack2 = {
+        Damage = 60,
+        Stun = 0,
+        Knockback = 0,
+        Cooldown = 2
+    },
+    Attack3 = {
+        Damage = 5,
+        Stun = 3,
+        Knockback = 0,
+        Cooldown = 5
+    },
+
+    Animations = {
+        Walking = "",
+        Idle = "",
+        Ready = "",
+        Attack1 = "",
+        Attack2 = "",
+        Attack3 = ""
+    },
+
+    Character = "BruteCharacter"
+}
+
+--|| EXPORTING ||--
+return class</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="6">
+          <Properties>
+            <string name="Name">Defender</string>
+            <string name="Source">--|| VARS ||--
+local class = {}
+
+--|| MAIN ||--
+class.ClassData = {
+    Health = 300,
+    Speed = 10,
+    Jump = 10,
+
+    Attack1 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+    Attack2 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+    Attack3 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+
+    Animations = {
+        Walking = "",
+        Idle = "",
+        Ready = "",
+        Attack1 = "",
+        Attack2 = "",
+        Attack3 = ""
+    },
+
+    Character = "DefenderCharacter"
+}
+
+--|| EXPORTING ||--
+return class</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="7">
+          <Properties>
+            <string name="Name">Juggernaut</string>
+            <string name="Source">--|| VARS ||--
+local class = {}
+
+--|| MAIN ||--
+class.ClassData = {
+    Health = 75,
+    Speed = 14,
+    Jump = 30,
+
+    Attack1 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+    Attack2 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+    Attack3 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+
+    Animations = {
+        Walking = "",
+        Idle = "",
+        Ready = "",
+        Attack1 = "",
+        Attack2 = "",
+        Attack3 = ""
+    },
+
+    Character = "JuggernautCharacter"
+}
+
+--|| EXPORTING ||--
+return class</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="8">
+          <Properties>
+            <string name="Name">Stealth</string>
+            <string name="Source">--|| VARS ||--
+local class = {}
+
+--|| MAIN ||--
+class.ClassData = {
+    Health = 100,
+    Speed = 40,
+    Jump = 70,
+
+    Attack1 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+    Attack2 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+    Attack3 = {
+        Damage = 50,
+        Stun = 0,
+        Knockback = 0
+    },
+
+    Animations = {
+        Walking = "",
+        Idle = "",
+        Ready = "",
+        Attack1 = "",
+        Attack2 = "",
+        Attack3 = ""
+    },
+
+    Character = "StealthCharacter"
+}
+
+--|| EXPORTING ||--
+return class</string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="9">
+        <Properties>
+          <string name="Name">util</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="10">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Folder" referent="11">
+      <Properties>
+        <string name="Name">Server</string>
+      </Properties>
+      <Item class="Script" referent="12">
+        <Properties>
+          <string name="Name">combat</string>
+          <string name="Source"><![CDATA[--|| SERVICES ||--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--|| VARS ||--
+local requestAttack = ReplicatedStorage:WaitForChild("Remotes").RequestAttack
+local debounceModule = require(ReplicatedStorage:WaitForChild("Modules").Debounce)
+
+--|| FUNCTIONS ||--
+function attackFunction(classData, attack) 
+    print("Attacked with "..classData[attack].Damage.." Damage!")
+end
+--|| MAIN ||--
+requestAttack.OnServerInvoke = function(player, attack, class)
+    local result, timeLeft  = debounceModule.Check(player.Name, "Attack")
+    
+    if result then 
+        --| Player is ready to attack
+        local requiredClass = require(ReplicatedStorage:WaitForChild("Modules").classes[class])
+
+        if requiredClass == nil then return nil end
+
+        debounceModule.Add(player.Name, "Attack", requiredClass.ClassData[attack].Cooldown, attackFunction, {requiredClass.ClassData, attack})
+
+        return true
+    else
+        print("Slowdown!")
+        return false
+        --| Player is on cooldown
+    end
+end
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="13">
+        <Properties>
+          <string name="Name">test</string>
+          <string name="Source">--|| SERVICES ||--
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--|| VARS ||--
+local classManager = require(ReplicatedStorage:WaitForChild("Modules").ClassManager)
+local loadAttack = ReplicatedStorage:WaitForChild("Remotes").LoadAttack
+
+--|| MAIN ||--
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        local messageSplit = string.split(message, " ")
+        if messageSplit[1] == "/load" then
+            local _, animationData, newHumanoid, a1, a2, a3 = classManager:LoadClassOnCharacter(player, messageSplit[2])
+            loadAttack:FireClient(player, animationData, newHumanoid, a1, a2, a3, messageSplit[2])
+
+        elseif messageSplit[1] == "/remove" then
+            classManager:RemoveClassOnCharacter(player)
+        end
+    end)
+end)</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="14">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterCharacterScripts" referent="15">
+      <Properties>
+        <string name="Name">StarterCharacterScripts</string>
+      </Properties>
+      <Item class="Folder" referent="16">
+        <Properties>
+          <string name="Name">Character</string>
+        </Properties>
+        <Item class="LocalScript" referent="17">
+          <Properties>
+            <string name="Name">main</string>
+            <string name="Source"></string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="StarterPlayerScripts" referent="18">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="Folder" referent="19">
+        <Properties>
+          <string name="Name">Client</string>
+        </Properties>
+        <Item class="LocalScript" referent="20">
+          <Properties>
+            <string name="Name">camera</string>
+            <string name="Source">--|| SERVICES ||--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+--|| VARS ||--
+local changeCamera = ReplicatedStorage:WaitForChild("Remotes").ChangeCamera
+local player = Players.LocalPlayer
+local currentCamera = workspace.CurrentCamera
+
+--|| MAIN ||--
+changeCamera.OnClientEvent:Connect(function()
+    if currentCamera.CameraSubject == nil then
+        repeat RunService.RenderStepped:Wait() until currentCamera.CameraSubject ~= nil
+    end
+    currentCamera.CameraType = Enum.CameraType.Custom
+    currentCamera.CameraSubject = player.Character
+end)</string>
+          </Properties>
+        </Item>
+        <Item class="LocalScript" referent="21">
+          <Properties>
+            <string name="Name">combat</string>
+            <string name="Source">--|| SERVICES ||--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+
+--|| VARS ||--
+local loadAttack = ReplicatedStorage:WaitForChild("Remotes").LoadAttack
+local removeAttack = ReplicatedStorage:WaitForChild("Remotes").RemoveAttack
+local requestAttack = ReplicatedStorage:WaitForChild("Remotes").RequestAttack
+local uisConnected = nil
+
+--|| FUNCTIONS ||--
+local function requestAttackFunction(attackNum, class)
+    local request = requestAttack:InvokeServer(attackNum, class)
+    if request then
+        --| Proceed with attack anim
+    elseif not request then
+        --| Player's attack is invalid
+    else 
+        print("An error has occured on the server...")
+    end
+end
+
+--|| MAIN ||--
+loadAttack.OnClientEvent:Connect(function(animationData: table, newHumanoid: Humanoid, a1: table, a2: table, a3: table, class: table)
+    uisConnected = UserInputService.InputBegan:Connect(function(input: InputObject, typing: any)
+        if typing then return end
+
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            requestAttackFunction("Attack1", class)
+        elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+            requestAttackFunction("Attack2", class)
+        elseif input.KeyCode == Enum.KeyCode.E then
+            requestAttackFunction("Attack3", class)
+        end
+    end)
+end)
+
+removeAttack.OnClientEvent:Connect(function()
+    uisConnected:Disconnect()
+    uisConnected = nil
+end)</string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+</roblox>
