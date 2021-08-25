@@ -11,13 +11,13 @@ class.ClassData = {
         Damage = 40,
         Stun = 0,
         Knockback = 1,
-        Cooldown = 2
+        Cooldown = 0.1
     },
     Attack2 = {
         Damage = 60,
         Stun = 0,
         Knockback = 0,
-        Cooldown = 2
+        Cooldown = 0.1
     },
     Attack3 = {
         Damage = 5,
