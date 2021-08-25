@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --|| VARS ||--
 local classModule = {}
+local removeAttack = ReplicatedStorage:WaitForChild("Remotes").RemoveAttack
 
 --|| FUNCTIONS ||--
 function classModule:LoadClassOnCharacter(player: Player, class: string) 
@@ -47,13 +48,14 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     humanoid.Health = foundClassModule.ClassData.Health
     humanoid.JumpPower = foundClassModule.ClassData.Jump
 
-    return animationData, humanoid
+    return print("Given player's class has been added"), animationData, humanoid, foundClassModule.ClassData.Attack1, foundClassModule.ClassData.Attack2, foundClassModule.ClassData.Attack3
 end
 
 function classModule:RemoveClassOnCharacter(player: Player)
     if not player.Character:FindFirstChild("ClassValue") then return warn("WRN: No class is loaded onto the given player") end
     player.Character.ClassValue:Destroy()
     player:LoadCharacter()
+    removeAttack:FireClient(player)
     return print("Given player's class has been removed")
 end
 

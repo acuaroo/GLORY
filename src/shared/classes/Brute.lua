@@ -8,19 +8,22 @@ class.ClassData = {
     Jump = 50,
 
     Attack1 = {
-        Damage = 50,
+        Damage = 40,
         Stun = 0,
-        Knockback = 0
+        Knockback = 1,
+        Cooldown = 2
     },
     Attack2 = {
-        Damage = 50,
+        Damage = 60,
         Stun = 0,
-        Knockback = 0
+        Knockback = 0,
+        Cooldown = 2
     },
     Attack3 = {
-        Damage = 50,
-        Stun = 0,
-        Knockback = 0
+        Damage = 5,
+        Stun = 3,
+        Knockback = 0,
+        Cooldown = 5
     },
 
     Animations = {
