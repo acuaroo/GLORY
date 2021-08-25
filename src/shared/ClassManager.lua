@@ -50,7 +50,7 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     return animationData, humanoid
 end
 
-function classModule:RemoveClassOnCharacter(player: Player) do
+function classModule:RemoveClassOnCharacter(player: Player)
     if not player.Character:FindFirstChild("ClassValue") then return warn("WRN: No class is loaded onto the given player") end
     player.Character.ClassValue:Destroy()
     player:LoadCharacter()
