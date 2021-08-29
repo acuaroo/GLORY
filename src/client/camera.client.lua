@@ -2,11 +2,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 --|| VARS ||--
 local changeCamera = ReplicatedStorage:WaitForChild("Remotes").ChangeCamera
 local player = Players.LocalPlayer
 local currentCamera = workspace.CurrentCamera
+
+local WEIGHT = 10
 
 --|| MAIN ||--
 changeCamera.OnClientEvent:Connect(function()
@@ -15,4 +18,22 @@ changeCamera.OnClientEvent:Connect(function()
     end
     currentCamera.CameraType = Enum.CameraType.Custom
     currentCamera.CameraSubject = player.Character
+
+    local head = player.Character:WaitForChild("Head")
+    local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
+    local subject = ReplicatedStorage:WaitForChild("Assets").Subject:Clone()
+
+    subject.Position = head.Position
+    currentCamera.CameraSubject = subject
+
+    local function updateSubject()
+        subject.Position = subject.Position:Lerp(head.Position,1/WEIGHT)
+	
+        if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+            local lookXZ = Vector3.new(currentCamera.CFrame.LookVector.X,0, currentCamera.CFrame.LookVector.Z)
+            humanoidRootPart.CFrame = CFrame.lookAt(humanoidRootPart.Position, humanoidRootPart.Position + lookXZ)
+        end
+    end
+
+    RunService:BindToRenderStep("UpdateSubject", Enum.RenderPriority.Camera.Value, updateSubject)
 end)

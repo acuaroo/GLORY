@@ -1,9 +1,10 @@
 --|| SERVICES ||--
 local Players = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --|| VARS ||--
-local classManager = require(ReplicatedStorage:WaitForChild("Modules").ClassManager)
+local classManager = require(ServerStorage:WaitForChild("Modules").ClassManager)
 local loadAttack = ReplicatedStorage:WaitForChild("Remotes").LoadAttack
 
 --|| MAIN ||--

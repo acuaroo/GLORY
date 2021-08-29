@@ -36,6 +36,7 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     classValue.Value = class
 
     player.Character:WaitForChild("Animate").Disabled = true
+    player.Character:WaitForChild("Animate").walk.WalkAnim.AnimationId = animationData.Idle
     task.wait(0.1)
     player.Character:WaitForChild("Animate").Disabled = false
 

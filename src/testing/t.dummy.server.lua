@@ -1,0 +1,11 @@
+-- --|| VARS ||--
+-- local dummyFolder = workspace:WaitForChild("Dummies")
+
+-- --|| MAIN ||--
+-- for _, dummy in pairs(dummyFolder:GetChildren()) do
+--     dummy.Humanoid.HealthChanged:Connect(function()
+--         if dummy.Humanoid.Health == 0 then 
+--             dummy.Humanoid.Health = 100
+--         end
+--     end)
+-- end
