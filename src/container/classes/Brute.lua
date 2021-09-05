@@ -11,7 +11,7 @@ class.ClassData = {
         Damage = 40,
         Stun = 0,
         Knockback = 1,
-        Cooldown = 0.1,
+        Cooldown = 0.2,
         Part = "Right Arm",
         AnimWait = 0.1
     },
@@ -19,7 +19,7 @@ class.ClassData = {
         Damage = 60,
         Stun = 0,
         Knockback = 0,
-        Cooldown = 0.1,
+        Cooldown = 0.2,
         Part = "Left Arm",
         AnimWait = 0.1
     },

@@ -1,13 +1,184 @@
 <roblox version="4">
-  <Item class="ReplicatedStorage" referent="0">
+  <Item class="ServerScriptService" referent="0">
     <Properties>
-      <string name="Name">ReplicatedStorage</string>
+      <string name="Name">ServerScriptService</string>
     </Properties>
     <Item class="Folder" referent="1">
       <Properties>
+        <string name="Name">Server</string>
+      </Properties>
+      <Item class="Script" referent="2">
+        <Properties>
+          <string name="Name">combat</string>
+          <string name="Source"><![CDATA[--|| SERVICES ||--
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--|| VARS ||--
+local requestAttack = ReplicatedStorage:WaitForChild("Remotes").RequestAttack
+local debounceModule = require(ServerStorage:WaitForChild("Modules").Debounce)
+local attackModule = require(ServerStorage:WaitForChild("Modules").Attack)
+local validAttacksByClient = {
+    "Attack1",
+    "Attack2",
+    "Attack3"
+}
+--|| MAIN ||--
+requestAttack.OnServerInvoke = function(player, attack, class)
+    if validAttacksByClient[attack] == nil then 
+        --| Ban Wave Add
+        return player:Kick("big noob")
+    end
+
+    local result, timeLeft  = debounceModule.Check(player.Name, attack)
+    
+    if result then 
+        --| Player is ready to attack
+        local requiredClass = require(ServerStorage:WaitForChild("Modules").classes[class])
+        print(requiredClass.ClassData[attack].Cooldown)
+
+        attackModule:StartAttack(player, player.Character[requiredClass.ClassData[attack].Part], requiredClass.ClassData[attack], attack, requiredClass.ClassData.Animations)
+        debounceModule.Add(player.Name, attack, requiredClass.ClassData[attack].Cooldown)
+
+        return true
+    else
+        print("Slowdown!")
+        return false, timeLeft
+        --| Player is on cooldown
+    end
+end
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="3">
+      <Properties>
+        <string name="Name">Testing</string>
+      </Properties>
+      <Item class="Script" referent="4">
+        <Properties>
+          <string name="Name">t.chat</string>
+          <string name="Source">--|| SERVICES ||--
+local Players = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--|| VARS ||--
+local classManager = require(ServerStorage:WaitForChild("Modules").ClassManager)
+local loadAttack = ReplicatedStorage:WaitForChild("Remotes").LoadAttack
+
+--|| MAIN ||--
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        local messageSplit = string.split(message, " ")
+        if messageSplit[1] == "/load" then
+            local _, animationData, newHumanoid, a1, a2, a3 = classManager:LoadClassOnCharacter(player, messageSplit[2])
+            loadAttack:FireClient(player, animationData, newHumanoid, a1, a2, a3, messageSplit[2])
+
+        elseif messageSplit[1] == "/remove" then
+            classManager:RemoveClassOnCharacter(player)
+        end
+    end)
+end)</string>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="5">
+        <Properties>
+          <string name="Name">t.dummy</string>
+          <string name="Source">-- --|| VARS ||--
+-- local dummyFolder = workspace:WaitForChild("Dummies")
+
+-- --|| MAIN ||--
+-- for _, dummy in pairs(dummyFolder:GetChildren()) do
+--     dummy.Humanoid.HealthChanged:Connect(function()
+--         if dummy.Humanoid.Health == 0 then 
+--             dummy.Humanoid.Health = 100
+--         end
+--     end)
+-- end</string>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="6">
+        <Properties>
+          <string name="Name">t.raybox</string>
+          <string name="Source">-- --|| SERVICES ||--
+-- local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- --|| VARS ||--
+-- local RaycastHitbox = require(ReplicatedStorage:WaitForChild("Modules").Raybox)
+
+-- --|| MAIN ||--
+-- local hitbox = RaycastHitbox.new(workspace:WaitForChild("acuaro_test")["Right Arm"])
+
+-- hitbox:HitStart()
+
+-- hitbox.OnHit:Connect(function(obj: Instance, humanoid: Humanoid)
+--     humanoid:TakeDamage(10)
+--     task.wait(0.1)
+--     hitbox:HitStop()
+--     hitbox:HitStart()
+-- end)</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerStorage" referent="7">
+    <Properties>
+      <string name="Name">ServerStorage</string>
+    </Properties>
+    <Item class="Folder" referent="8">
+      <Properties>
         <string name="Name">Modules</string>
       </Properties>
-      <Item class="ModuleScript" referent="2">
+      <Item class="ModuleScript" referent="9">
+        <Properties>
+          <string name="Name">Attack</string>
+          <string name="Source">--|| SERVICES ||--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--|| VARS ||--
+local RaycastHitbox = require(ReplicatedStorage:WaitForChild("Modules").Raybox)
+
+local attackModule = {}
+
+--|| FUNCTIONS ||--
+function attackModule:StartAttack(player: Player, hitbox: Instance, attackData: table, attackNum: string, animationData: table) 
+    local attackHitbox = RaycastHitbox.new(hitbox)
+
+    local parems = RaycastParams.new()
+    parems.FilterDescendantsInstances = {player.Character}
+    parems.FilterType = Enum.RaycastFilterType.Blacklist
+
+    attackHitbox.RaycastParams = parems
+    attackHitbox:HitStart()
+
+    --| Proceed with attack anim
+    local animation = Instance.new("Animation")
+    animation.Parent = player.Character.Humanoid
+    animation.AnimationId = animationData[attackNum]
+    
+    local animLoaded = player.Character.Humanoid:LoadAnimation(animation)
+    animLoaded.Priority = Enum.AnimationPriority.Action
+
+    animLoaded:Play()
+
+    attackHitbox.OnHit:Connect(function(obj: Instance, humanoid: Humanoid)
+        print(obj.Name)
+        humanoid:TakeDamage(attackData.Damage)
+        -- Deal stun, effects, etc
+    end)
+
+    animLoaded.Stopped:Wait()
+    attackHitbox:Destroy()
+
+    return 
+end
+
+--|| EXPORTING ||--
+return attackModule</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="10">
         <Properties>
           <string name="Name">ClassManager</string>
           <string name="Source">--|| SERVICES ||--
@@ -48,6 +219,7 @@ function classModule:LoadClassOnCharacter(player: Player, class: string)
     classValue.Value = class
 
     player.Character:WaitForChild("Animate").Disabled = true
+    player.Character:WaitForChild("Animate").walk.WalkAnim.AnimationId = animationData.Idle
     task.wait(0.1)
     player.Character:WaitForChild("Animate").Disabled = false
 
@@ -75,7 +247,7 @@ end
 return classModule</string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="3">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">Debounce</string>
           <string name="Source"><![CDATA[--//Hopefully you find this module in some way usefull 
@@ -160,11 +332,11 @@ return Cooldown
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="4">
+      <Item class="Folder" referent="12">
         <Properties>
           <string name="Name">classes</string>
         </Properties>
-        <Item class="ModuleScript" referent="5">
+        <Item class="ModuleScript" referent="13">
           <Properties>
             <string name="Name">Brute</string>
             <string name="Source">--|| VARS ||--
@@ -173,34 +345,39 @@ local class = {}
 --|| MAIN ||--
 class.ClassData = {
     Health = 100,
-    Speed = 16,
-    Jump = 50,
+    Speed = 10,
+    Jump = 20,
 
     Attack1 = {
         Damage = 40,
         Stun = 0,
         Knockback = 1,
-        Cooldown = 2
+        Cooldown = 0.2,
+        Part = "Right Arm",
+        AnimWait = 0.1
     },
     Attack2 = {
         Damage = 60,
         Stun = 0,
         Knockback = 0,
-        Cooldown = 2
+        Cooldown = 0.2,
+        Part = "Left Arm",
+        AnimWait = 0.1
     },
     Attack3 = {
         Damage = 5,
         Stun = 3,
         Knockback = 0,
-        Cooldown = 5
+        Cooldown = 2,
+        AnimWait = 0.1
     },
 
     Animations = {
         Walking = "",
-        Idle = "",
+        Idle = "rbxassetid://7328094035",
         Ready = "",
-        Attack1 = "",
-        Attack2 = "",
+        Attack1 = "rbxassetid://7328126624",
+        Attack2 = "rbxassetid://7351659023",
         Attack3 = ""
     },
 
@@ -211,7 +388,7 @@ class.ClassData = {
 return class</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="6">
+        <Item class="ModuleScript" referent="14">
           <Properties>
             <string name="Name">Defender</string>
             <string name="Source">--|| VARS ||--
@@ -255,7 +432,7 @@ class.ClassData = {
 return class</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="7">
+        <Item class="ModuleScript" referent="15">
           <Properties>
             <string name="Name">Juggernaut</string>
             <string name="Source">--|| VARS ||--
@@ -299,7 +476,7 @@ class.ClassData = {
 return class</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="8">
+        <Item class="ModuleScript" referent="16">
           <Properties>
             <string name="Name">Stealth</string>
             <string name="Source">--|| VARS ||--
@@ -344,98 +521,26 @@ return class</string>
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="9">
+      <Item class="Folder" referent="17">
         <Properties>
           <string name="Name">util</string>
         </Properties>
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="10">
-    <Properties>
-      <string name="Name">ServerScriptService</string>
-    </Properties>
-    <Item class="Folder" referent="11">
-      <Properties>
-        <string name="Name">Server</string>
-      </Properties>
-      <Item class="Script" referent="12">
-        <Properties>
-          <string name="Name">combat</string>
-          <string name="Source"><![CDATA[--|| SERVICES ||--
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
---|| VARS ||--
-local requestAttack = ReplicatedStorage:WaitForChild("Remotes").RequestAttack
-local debounceModule = require(ReplicatedStorage:WaitForChild("Modules").Debounce)
-
---|| FUNCTIONS ||--
-function attackFunction(classData, attack) 
-    print("Attacked with "..classData[attack].Damage.." Damage!")
-end
---|| MAIN ||--
-requestAttack.OnServerInvoke = function(player, attack, class)
-    local result, timeLeft  = debounceModule.Check(player.Name, "Attack")
-    
-    if result then 
-        --| Player is ready to attack
-        local requiredClass = require(ReplicatedStorage:WaitForChild("Modules").classes[class])
-
-        if requiredClass == nil then return nil end
-
-        debounceModule.Add(player.Name, "Attack", requiredClass.ClassData[attack].Cooldown, attackFunction, {requiredClass.ClassData, attack})
-
-        return true
-    else
-        print("Slowdown!")
-        return false
-        --| Player is on cooldown
-    end
-end
-]]></string>
-        </Properties>
-      </Item>
-      <Item class="Script" referent="13">
-        <Properties>
-          <string name="Name">test</string>
-          <string name="Source">--|| SERVICES ||--
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
---|| VARS ||--
-local classManager = require(ReplicatedStorage:WaitForChild("Modules").ClassManager)
-local loadAttack = ReplicatedStorage:WaitForChild("Remotes").LoadAttack
-
---|| MAIN ||--
-Players.PlayerAdded:Connect(function(player)
-    player.Chatted:Connect(function(message)
-        local messageSplit = string.split(message, " ")
-        if messageSplit[1] == "/load" then
-            local _, animationData, newHumanoid, a1, a2, a3 = classManager:LoadClassOnCharacter(player, messageSplit[2])
-            loadAttack:FireClient(player, animationData, newHumanoid, a1, a2, a3, messageSplit[2])
-
-        elseif messageSplit[1] == "/remove" then
-            classManager:RemoveClassOnCharacter(player)
-        end
-    end)
-end)</string>
-        </Properties>
-      </Item>
-    </Item>
-  </Item>
-  <Item class="StarterPlayer" referent="14">
+  <Item class="StarterPlayer" referent="18">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterCharacterScripts" referent="15">
+    <Item class="StarterCharacterScripts" referent="19">
       <Properties>
         <string name="Name">StarterCharacterScripts</string>
       </Properties>
-      <Item class="Folder" referent="16">
+      <Item class="Folder" referent="20">
         <Properties>
           <string name="Name">Character</string>
         </Properties>
-        <Item class="LocalScript" referent="17">
+        <Item class="LocalScript" referent="21">
           <Properties>
             <string name="Name">main</string>
             <string name="Source"></string>
@@ -443,26 +548,29 @@ end)</string>
         </Item>
       </Item>
     </Item>
-    <Item class="StarterPlayerScripts" referent="18">
+    <Item class="StarterPlayerScripts" referent="22">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="19">
+      <Item class="Folder" referent="23">
         <Properties>
           <string name="Name">Client</string>
         </Properties>
-        <Item class="LocalScript" referent="20">
+        <Item class="LocalScript" referent="24">
           <Properties>
             <string name="Name">camera</string>
-            <string name="Source">--|| SERVICES ||--
+            <string name="Source"><![CDATA[--|| SERVICES ||--
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 --|| VARS ||--
 local changeCamera = ReplicatedStorage:WaitForChild("Remotes").ChangeCamera
 local player = Players.LocalPlayer
 local currentCamera = workspace.CurrentCamera
+
+local WEIGHT = 0.1
 
 --|| MAIN ||--
 changeCamera.OnClientEvent:Connect(function()
@@ -471,10 +579,31 @@ changeCamera.OnClientEvent:Connect(function()
     end
     currentCamera.CameraType = Enum.CameraType.Custom
     currentCamera.CameraSubject = player.Character
-end)</string>
+
+    local newCharacter = player.Character or player.CharacterAdded:Wait()
+
+    local head = newCharacter:WaitForChild("Head")
+    local humanoidRootPart = newCharacter:WaitForChild("HumanoidRootPart")
+    local subject = ReplicatedStorage:WaitForChild("Assets").Subject:Clone()
+
+    subject.Position = head.Position
+    currentCamera.CameraSubject = subject
+
+    local function updateSubject()
+        subject.Position = subject.Position:Lerp(head.Position,1/WEIGHT)
+	
+        if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+            local lookXZ = Vector3.new(currentCamera.CFrame.LookVector.X,0, currentCamera.CFrame.LookVector.Z)
+            humanoidRootPart.CFrame = CFrame.lookAt(humanoidRootPart.Position, humanoidRootPart.Position + lookXZ)
+        end
+    end
+
+    RunService:BindToRenderStep("UpdateSubject", Enum.RenderPriority.Camera.Value, updateSubject)
+end)
+]]></string>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="21">
+        <Item class="LocalScript" referent="25">
           <Properties>
             <string name="Name">combat</string>
             <string name="Source">--|| SERVICES ||--
@@ -488,15 +617,19 @@ local requestAttack = ReplicatedStorage:WaitForChild("Remotes").RequestAttack
 local uisConnected = nil
 
 --|| FUNCTIONS ||--
-local function requestAttackFunction(attackNum, class)
-    local request = requestAttack:InvokeServer(attackNum, class)
-    if request then
-        --| Proceed with attack anim
-    elseif not request then
-        --| Player's attack is invalid
-    else 
-        print("An error has occured on the server...")
-    end
+local function requestAttackFunction(attackNum: string, class: table, animationData: table, newHumanoid: Humanoid)
+    pcall(function()
+        local request, timeLeft = requestAttack:InvokeServer(attackNum, class)
+        if request then
+            --| Something
+        elseif not request then
+            --| Player's attack is invalid
+            print("Waiting "..timeLeft)
+            task.wait(timeLeft)
+        else 
+            print("An error has occured on the server...")
+        end
+    end) 
 end
 
 --|| MAIN ||--
@@ -505,11 +638,11 @@ loadAttack.OnClientEvent:Connect(function(animationData: table, newHumanoid: Hum
         if typing then return end
 
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            requestAttackFunction("Attack1", class)
+            requestAttackFunction("Attack1", class, animationData, newHumanoid)
         elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-            requestAttackFunction("Attack2", class)
+            requestAttackFunction("Attack2", class, animationData, newHumanoid)
         elseif input.KeyCode == Enum.KeyCode.E then
-            requestAttackFunction("Attack3", class)
+            requestAttackFunction("Attack3", class, animationData, newHumanoid)
         end
     end)
 end)
