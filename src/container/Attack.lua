@@ -22,11 +22,7 @@ function attackModule:StartAttack(player: Player, hitbox: Instance, attackData: 
     animation.Parent = player.Character.Humanoid
     animation.AnimationId = animationData[attackNum]
     
-    --|| DEPRECATED, CREATE ANIMATOR IN FUTURE
-    local mainAnimator = Instance.new("Animator")
-    mainAnimator.Parent = player.Character.Humanoid
-
-    local animLoaded = mainAnimator:LoadAnimation(animation)
+    local animLoaded = player.Character.Humanoid:LoadAnimation(animation)
     animLoaded.Priority = Enum.AnimationPriority.Action
 
     animLoaded:Play()

@@ -5,7 +5,7 @@ local class = {}
 class.ClassData = {
     Health = 100,
     Speed = 10,
-    Jump = 50,
+    Jump = 20,
 
     Attack1 = {
         Damage = 40,
