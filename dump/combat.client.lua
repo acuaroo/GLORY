@@ -11,13 +11,12 @@ local uisConnected = nil
 --|| FUNCTIONS ||--
 local function requestAttackFunction(attackNum: string, class: table, animationData: table, newHumanoid: Humanoid)
     pcall(function()
-        local request, timeLeft = requestAttack:InvokeServer(attackNum, class)
+        local request = requestAttack:InvokeServer(attackNum, class)
         if request then
             --| Something
         elseif not request then
+            task.wait()
             --| Player's attack is invalid
-            print("Waiting "..timeLeft)
-            task.wait(timeLeft)
         else 
             print("An error has occured on the server...")
         end
