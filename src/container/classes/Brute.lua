@@ -5,39 +5,35 @@ local class = {}
 class.ClassData = {
     Health = 100,
     Speed = 10,
-    Jump = 20,
+    Jump = 50,
+    Guard = 1,
 
-    Attack1 = {
-        Damage = 40,
-        Stun = 0,
-        Knockback = 1,
-        Cooldown = 0.2,
-        Part = "Right Arm",
-        AnimWait = 0.1
-    },
-    Attack2 = {
-        Damage = 60,
-        Stun = 0,
-        Knockback = 0,
-        Cooldown = 0.2,
-        Part = "Left Arm",
-        AnimWait = 0.1
-    },
-    Attack3 = {
-        Damage = 5,
-        Stun = 3,
-        Knockback = 0,
-        Cooldown = 2,
-        AnimWait = 0.1
+    Attacks = {
+        ["Attack1"] = {
+            Damage = 15,
+            Cooldown = 1,
+            RaycastPart = "Right Arm",
+            Properties = {Stun = 0, Knockback = 0.1}
+        },
+        ["Attack2"] = {
+            Damage = 15,
+            Cooldown = 1,
+            RaycastPart = "Left Arm",
+            Properties = {Stun = 0, Knockback = 0.1}
+        },
+        ["Attack3"] = {
+            Damage = 5,
+            Cooldown = 5,
+            Properties = {Stun = 3, Knockback = 0}
+        },
     },
 
     Animations = {
-        Walking = "",
-        Idle = "rbxassetid://7328094035",
-        Ready = "",
-        Attack1 = "rbxassetid://7328126624",
-        Attack2 = "rbxassetid://7351659023",
-        Attack3 = ""
+        Walking = "rbxassetid://7421276176",
+        Idle = "rbxassetid://",
+        Attack1 = "rbxassetid://7421200589",
+        Attack2 = "rbxassetid://7421278831",
+        Attack3 = "rbxassetid://"
     },
 
     Character = "BruteCharacter"

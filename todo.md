@@ -1,0 +1,1 @@
+fix animation loading but in ClassManager.lua
